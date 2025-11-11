@@ -1,37 +1,26 @@
-import NextAuth from "next-auth"
-import GoogleProvider from "next-auth/providers/google"
+import { getServerSession } from "next-auth";
+import { authOptions } from "../auth/[...nextauth]/route";
+import { NextResponse } from "next/server";
 
-const handler = NextAuth({
-  providers: [
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-      authorization: {
-        params: {
-          scope: 'openid email profile https://www.googleapis.com/auth/youtube.readonly',
-          prompt: "consent",
-          access_type: "offline",
-          response_type: "code"
-        }
-      }
-    }),
-  ],
-  callbacks: {
-    async jwt({ token, account }) {
-      if (account) {
-        token.accessToken = account.access_token
-        token.refreshToken = account.refresh_token
-      }
-      return token
-    },
-    async session({ session, token }) {
-     session.accessToken = token.accessToken as string | undefined;
-session.refreshToken = token.refreshToken as string | undefined;
+export async function GET() {
+  // Get current user session (including accessToken)
+  const session = await getServerSession(authOptions);
+  const accessToken = session?.accessToken;
 
-      return session
+  if (!accessToken) {
+    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  }
+
+  // Fetch channel info from YouTube Data API
+  const res = await fetch(
+    "https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics,membership&mine=true",
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
     }
-  },
-})
+  );
 
-export { handler as GET, handler as POST }
-
+  const data = await res.json();
+  return NextResponse.json(data);
+}
