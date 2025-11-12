@@ -17,8 +17,7 @@ export const authOptions = {
     }),
   ],
   callbacks: {
-    async jwt({ token, account }) {
-      if (account) {
+    async jwt({ token, account }: { token: any; account: any }) {      if (account) {
         token.accessToken = account.access_token as string | undefined
         token.refreshToken = account.refresh_token as string | undefined
       }
