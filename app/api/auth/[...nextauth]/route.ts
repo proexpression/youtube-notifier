@@ -23,8 +23,7 @@ export const authOptions = {
       }
       return token
     },
-    async session({ session, token }) {
-      session.accessToken = token.accessToken as string | undefined
+    async session({ session, token }: { session: any; token: any }) {      session.accessToken = token.accessToken as string | undefined
       session.refreshToken = token.refreshToken as string | undefined
       return session
     },
